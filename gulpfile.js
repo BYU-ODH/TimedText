@@ -5,7 +5,7 @@ var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
 var sourcemaps = require('gulp-sourcemaps');
 
-const BUILD_DIR = 'build/'
+const BUILD_DIR = 'lib/'
 const CSS_BUILD_DIR = `${BUILD_DIR}css/`
 const JS_BUILD_DIR = `${BUILD_DIR}js/`
 const CSS_DIR = 'css/'

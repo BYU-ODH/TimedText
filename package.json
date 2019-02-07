@@ -1,6 +1,7 @@
 {
-  "name": "TimedText",
+  "name": "yvideo-timedtext",
   "version": "1.0.1",
+  "main": "index.js",
   "description": "yvideo text track renderers",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -25,5 +26,8 @@
   },
   "devDependencies": {
     "gulp": "^4.0.0"
-  }
+  },
+  "files": [
+    "/lib"
+  ]
 }

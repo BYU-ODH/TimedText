@@ -265,3 +265,4 @@ function ActiveTextTrackCueList(textTrackCueList,textTrack){
 };
 ActiveTextTrackCueList.prototype = new TextTrackCueList(null);
 ActiveTextTrackCueList.prototype.toString = function() { return "[ActiveTextTrackCueList]"; };
+

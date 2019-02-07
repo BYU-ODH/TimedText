@@ -102,3 +102,11 @@
         return Cue;
     };
 }(window,window.TimedText));
+
+module.exports = {
+    "TimedText": TimedText,
+    "TextTrack": TextTrack,
+    "TextTrackCueList": TextTrackCueList,
+    "ActiveTextTrackCueList": ActiveTextTrackCueList,
+};
+
