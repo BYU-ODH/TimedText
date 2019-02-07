@@ -2,779 +2,779 @@
 http://www.whatwg.org/specs/web-apps/current-work/webvtt.html
 */
 (function(TimedText){
-	"use strict";
+    "use strict";
 
-	if(!TimedText){ throw new Error("TimedText not defined."); }
+    if(!TimedText){ throw new Error("TimedText not defined."); }
 
-	var allowedDirs = {'':true,'rl':true,'lr':true},
-		allowedAlign = {'start':true,'middle':true,'end':true,'left':true,'right':true};
+    var allowedDirs = {'':true,'rl':true,'lr':true},
+        allowedAlign = {'start':true,'middle':true,'end':true,'left':true,'right':true};
 
 
-	function validate_percentage(value){
-		var number = /^\d+%$/.test(value)?parseInt(value,10):+value;
-		if((typeof number === 'number') && number>=0 && number<=100){
-			return number;
-		}
-		throw new SyntaxError("Invalid Percentage");
-	}
+    function validate_percentage(value){
+        var number = /^\d+%$/.test(value)?parseInt(value,10):+value;
+        if((typeof number === 'number') && number>=0 && number<=100){
+            return number;
+        }
+        throw new SyntaxError("Invalid Percentage");
+    }
 
-	var WebVTTCue = TimedText.makeCueType(function(){
-		var dir = '',
-			snapToLines = true,
-			line = "auto",
-			position = 50,
-			size = 100,
-			align = "middle";
+    var WebVTTCue = TimedText.makeCueType(function(){
+        var dir = '',
+            snapToLines = true,
+            line = "auto",
+            position = 50,
+            size = 100,
+            align = "middle";
 
-		Object.defineProperties(this,{
-			snapToLines: { get: function(){ return snapToLines; }, enumerable: true },
-			vertical: {
-				set: function(value){
-					if(allowedDirs.hasOwnProperty(value)){ return (dir = value); }
-					throw new SyntaxError("Invalid Writing Direction");
-				},get: function(){return dir;},
-				enumerable: true
-			},
-			align: {
-				set: function(value){
-					if(allowedAlign.hasOwnProperty(value)){ return align=value; }
-					throw new SyntaxError("Invalid value for align attribute.");
-				},get: function(){return align;},
-				enumerable: true
-			},
-			line: {
-				set: function(value){
-					var number;
-					if(typeof value === 'number'){
-						snapToLines = true;
-						line = value+"";
-					}else if(value==='auto'){
-						snapToLines = true;
-						line = 'auto';
-					}else if(/^-?\d+%?$/.test(value)){
-						number = parseInt(value,10);
-						if(value[value.length-1] === '%'){	//If the last character in value is %
-							if(number<0 || number>100){ throw new SyntaxError("Invalid Percentage"); }
-							snapToLines = false;
-							line = number + "%";
-						}else{
-							snapToLines = true;
-							line = ""+number;
-						}
-					}else{
-						throw new SyntaxError("Invalid Line Position");
-					}
-					return line;
-				},get: function(){return line;},
-				enumerable: true
-			},
-			size: {
-				set: function(value){ return size = validate_percentage(value); },
-				get: function(){return size;},
-				enumerable: true
-			},
-			position: {
-				set: function(value){ return position = validate_percentage(value); },
-				get: function(){return position;},
-				enumerable: true
-			}
-		});
-	});
+        Object.defineProperties(this,{
+            snapToLines: { get: function(){ return snapToLines; }, enumerable: true },
+            vertical: {
+                set: function(value){
+                    if(allowedDirs.hasOwnProperty(value)){ return (dir = value); }
+                    throw new SyntaxError("Invalid Writing Direction");
+                },get: function(){return dir;},
+                enumerable: true
+            },
+            align: {
+                set: function(value){
+                    if(allowedAlign.hasOwnProperty(value)){ return align=value; }
+                    throw new SyntaxError("Invalid value for align attribute.");
+                },get: function(){return align;},
+                enumerable: true
+            },
+            line: {
+                set: function(value){
+                    var number;
+                    if(typeof value === 'number'){
+                        snapToLines = true;
+                        line = value+"";
+                    }else if(value==='auto'){
+                        snapToLines = true;
+                        line = 'auto';
+                    }else if(/^-?\d+%?$/.test(value)){
+                        number = parseInt(value,10);
+                        if(value[value.length-1] === '%'){    //If the last character in value is %
+                            if(number<0 || number>100){ throw new SyntaxError("Invalid Percentage"); }
+                            snapToLines = false;
+                            line = number + "%";
+                        }else{
+                            snapToLines = true;
+                            line = ""+number;
+                        }
+                    }else{
+                        throw new SyntaxError("Invalid Line Position");
+                    }
+                    return line;
+                },get: function(){return line;},
+                enumerable: true
+            },
+            size: {
+                set: function(value){ return size = validate_percentage(value); },
+                get: function(){return size;},
+                enumerable: true
+            },
+            position: {
+                set: function(value){ return position = validate_percentage(value); },
+                get: function(){return position;},
+                enumerable: true
+            }
+        });
+    });
 
-	//http://dev.w3.org/html5/webvtt/#webvtt-cue-text-dom-construction-rules
-	function createTimestampNode(timeData){
-		var node,
-			hh = parseInt(timeData[1],10)||0,
-			mm = parseInt(timeData[2],10)||0,
-			ss = parseInt(timeData[3],10)||0,
-			ms = parseInt(timeData[4],10)||0;
+    //http://dev.w3.org/html5/webvtt/#webvtt-cue-text-dom-construction-rules
+    function createTimestampNode(timeData){
+        var node,
+            hh = parseInt(timeData[1],10)||0,
+            mm = parseInt(timeData[2],10)||0,
+            ss = parseInt(timeData[3],10)||0,
+            ms = parseInt(timeData[4],10)||0;
 
-		node = document.createElement('i');
-		node.dataset.target = "timestamp";
-		node.dataset.seconds = hh*3600+mm*60+ss+ms/1000;
+        node = document.createElement('i');
+        node.dataset.target = "timestamp";
+        node.dataset.seconds = hh*3600+mm*60+ss+ms/1000;
 
-		node.dataset.timestamp = (hh>9?hh:"0"+hh)+":" +
-					(mm>9?mm:"0"+mm)+":" +
-					(ss>9?ss:"0"+ss)+"." +
-					(ms>99?ms:(ms>9?"0"+ms:"00"+ms));
-		return node;
-	}
+        node.dataset.timestamp = (hh>9?hh:"0"+hh)+":" +
+                    (mm>9?mm:"0"+mm)+":" +
+                    (ss>9?ss:"0"+ss)+"." +
+                    (ms>99?ms:(ms>9?"0"+ms:"00"+ms));
+        return node;
+    }
 
-	function hasRealTextContent(textInput){
-		return !!textInput.replace(/[^a-z0-9]+/ig,"").length;
-	}
+    function hasRealTextContent(textInput){
+        return !!textInput.replace(/[^a-z0-9]+/ig,"").length;
+    }
 
-	function processCueText(input){
+    function processCueText(input){
         var DOM = document.createDocumentFragment(),
-			current = DOM,
-			stack = [],
-			lang = "";
+            current = DOM,
+            stack = [],
+            lang = "";
 
-		input
-			.split(/(<\/?[^>]+>)/ig)
-			.filter(function(cuePortionText){
-				return !!cuePortionText.replace(/\s*/ig,"");
-			}).forEach(function(token){
-			var tag, chunk, node, frags;
-			if(token[0] !== "<"){ // Text string
-				frags = token.replace(/\n\r/g,'\n').split(/\n(?!$)/g);
-				frags.forEach(function(frag){
-					current.appendChild(document.createTextNode(frag));
-					current.appendChild(document.createElement('br'));
-				});
-				current.removeChild(current.lastChild);
-			}else if(token[1] === "/"){ //Closing tag
-				tag = token.match(/<\/([^\s>]+)/)[1].toUpperCase();
-				if(tag === current.nodeName || (current.dataset && tag === current.dataset.cuetag)){
-					if(tag === 'LANG'){ lang = stack.pop(); }
-					current = current.parentNode;
-				}
-				// else tag mismatch; ignore.
-			}else{ //Opening tag
-				if(chunk = token.match(/<(\d{2})?:?(\d{2}):(\d{2})[\.\,](\d+)/)){
-					current.appendChild(createTimestampNode(chunk));
-					return;
-				}else if(chunk = token.match(/<c((?:\.[^\t\n\r &<>.])*)>/i)){
-					node = document.createElement('span');
-					node.className = chunk[1].replace('.',' ').substr(1);
-					node.dataset.cuetag = "C";
-				}else if(chunk = token.match(/<v((?:\.[^\t\n\r &<>.])*)\s+([^>]+)>/i)){
-					node = document.createElement('span');
-					node.className = chunk[1].replace('.',' ').substr(1);
-					node.title = node.dataset.voice = chunk[2].replace(/[\"]/g,"");
-					node.dataset.cuetag = "V";
-				}else if(chunk = token.match(/<lang((?:\.[^\t\n\r &<>.])*)\s+([^>]+)>/i)){
-					node = document.createElement('span');
-					node.className = chunk[1].replace('.',' ').substr(1);
-					node.dataset.cuetag = "LANG";
-					stack.push(lang);
-					lang = chunk[2];
-				}else if(chunk = token.match(/<(b|i|u|ruby|rt)((?:\.[^\t\n\r &<>.])*)\s*>/)){
-					node = document.createElement(chunk[1]);
-					node.className = chunk[2].replace('.',' ').substr(1);
-				}else{
-					return;
-				}
-				if(lang){ node.lang = lang; }
-				current.appendChild(node);
-				current = node;
-			}
-		});
-		return DOM;
-	}
+        input
+            .split(/(<\/?[^>]+>)/ig)
+            .filter(function(cuePortionText){
+                return !!cuePortionText.replace(/\s*/ig,"");
+            }).forEach(function(token){
+            var tag, chunk, node, frags;
+            if(token[0] !== "<"){ // Text string
+                frags = token.replace(/\n\r/g,'\n').split(/\n(?!$)/g);
+                frags.forEach(function(frag){
+                    current.appendChild(document.createTextNode(frag));
+                    current.appendChild(document.createElement('br'));
+                });
+                current.removeChild(current.lastChild);
+            }else if(token[1] === "/"){ //Closing tag
+                tag = token.match(/<\/([^\s>]+)/)[1].toUpperCase();
+                if(tag === current.nodeName || (current.dataset && tag === current.dataset.cuetag)){
+                    if(tag === 'LANG'){ lang = stack.pop(); }
+                    current = current.parentNode;
+                }
+                // else tag mismatch; ignore.
+            }else{ //Opening tag
+                if(chunk = token.match(/<(\d{2})?:?(\d{2}):(\d{2})[\.\,](\d+)/)){
+                    current.appendChild(createTimestampNode(chunk));
+                    return;
+                }else if(chunk = token.match(/<c((?:\.[^\t\n\r &<>.])*)>/i)){
+                    node = document.createElement('span');
+                    node.className = chunk[1].replace('.',' ').substr(1);
+                    node.dataset.cuetag = "C";
+                }else if(chunk = token.match(/<v((?:\.[^\t\n\r &<>.])*)\s+([^>]+)>/i)){
+                    node = document.createElement('span');
+                    node.className = chunk[1].replace('.',' ').substr(1);
+                    node.title = node.dataset.voice = chunk[2].replace(/[\"]/g,"");
+                    node.dataset.cuetag = "V";
+                }else if(chunk = token.match(/<lang((?:\.[^\t\n\r &<>.])*)\s+([^>]+)>/i)){
+                    node = document.createElement('span');
+                    node.className = chunk[1].replace('.',' ').substr(1);
+                    node.dataset.cuetag = "LANG";
+                    stack.push(lang);
+                    lang = chunk[2];
+                }else if(chunk = token.match(/<(b|i|u|ruby|rt)((?:\.[^\t\n\r &<>.])*)\s*>/)){
+                    node = document.createElement(chunk[1]);
+                    node.className = chunk[2].replace('.',' ').substr(1);
+                }else{
+                    return;
+                }
+                if(lang){ node.lang = lang; }
+                current.appendChild(node);
+                current = node;
+            }
+        });
+        return DOM;
+    }
 
-	WebVTTCue.prototype.getCueAsHTML = function(){
-		if(!this.DOM){
-			this.DOM = processCueText(this.text);
-		}
-		return this.DOM.cloneNode(true);
-	};
+    WebVTTCue.prototype.getCueAsHTML = function(){
+        if(!this.DOM){
+            this.DOM = processCueText(this.text);
+        }
+        return this.DOM.cloneNode(true);
+    };
 
-	//strip out any html that could not have been generated from VTT
-	function formatHTML(node){
-		var tag, frag, parent;
-		if(node.nodeType === Node.TEXT_NODE){ return node; }
-		if(node.nodeType === Node.ELEMENT_NODE){
-			tag = node.nodeName;
-			outer: switch(tag){
-			case "BR": return node.cloneNode(false);
-			case "DIV":
-				frag = document.createDocumentFragment();
-				frag.appendChild(document.createElement('br'));
-				if(node.className.length === 0){
-					parent = frag;
-				}else{
-					parent = document.createElement(span);
-					parent.className = node.className;
-					frag.appendChild(parent);
-				}
-				break;
-			case "I":
-				parent = frag = node.cloneNode(false);
-				parent.className = node.className;
-				break;
-			case "U": case "B": case "RUBY": case "RT":
-				parent = frag = document.createElement(tag);
-				parent.className = node.className;
-				break;
-			case "SPAN":
-				switch(node['data-cuetag']){
-				case "V": case "C": case "LANG":
-					parent = frag = document.createElement(tag);
-					frag["data-cuetag"] = node["data-cuetag"];
-					parent.className = node.className;
-					break outer;
-				}
-			default:
-				//this is where invalid tags are dropped
-				if(node.childNodes.length === 1){
-					frag = formatHTML(node.firstChild);
-					if(node.className.length === 0){ return frag; }
-					
-					parent = document.createElement('span');
-					parent.className = node.className;
-					parent.appendChild(frag);
-					return parent;
-				}
+    //strip out any html that could not have been generated from VTT
+    function formatHTML(node){
+        var tag, frag, parent;
+        if(node.nodeType === Node.TEXT_NODE){ return node; }
+        if(node.nodeType === Node.ELEMENT_NODE){
+            tag = node.nodeName;
+            outer: switch(tag){
+            case "BR": return node.cloneNode(false);
+            case "DIV":
+                frag = document.createDocumentFragment();
+                frag.appendChild(document.createElement('br'));
+                if(node.className.length === 0){
+                    parent = frag;
+                }else{
+                    parent = document.createElement(span);
+                    parent.className = node.className;
+                    frag.appendChild(parent);
+                }
+                break;
+            case "I":
+                parent = frag = node.cloneNode(false);
+                parent.className = node.className;
+                break;
+            case "U": case "B": case "RUBY": case "RT":
+                parent = frag = document.createElement(tag);
+                parent.className = node.className;
+                break;
+            case "SPAN":
+                switch(node['data-cuetag']){
+                case "V": case "C": case "LANG":
+                    parent = frag = document.createElement(tag);
+                    frag["data-cuetag"] = node["data-cuetag"];
+                    parent.className = node.className;
+                    break outer;
+                }
+            default:
+                //this is where invalid tags are dropped
+                if(node.childNodes.length === 1){
+                    frag = formatHTML(node.firstChild);
+                    if(node.className.length === 0){ return frag; }
 
-				parent = frag = document.createDocumentFragment();
-				break;
-			}
-		}
-		[].slice.call(node.childNodes).forEach(function(cnode){
-			var nnode = formatHTML(cnode);
-			if( //drop repeated BRs- blank lines not allowed
-				parent.lastChild === null ||
-				parent.lastChild.nodeName !== 'BR' ||
-				nnode.nodeName !== 'BR'
-			){ parent.appendChild(nnode); }
-		});
-		return frag;
-	}
+                    parent = document.createElement('span');
+                    parent.className = node.className;
+                    parent.appendChild(frag);
+                    return parent;
+                }
 
-	function HTML2VTT(node){
-		return [].map.call(node.childNodes, HTML2VTTr)
-			.join('') //replace ensures no blank lines are exported
-			.replace(/(\r\n){2,}/g,'\r\n');
-	}
+                parent = frag = document.createDocumentFragment();
+                break;
+            }
+        }
+        [].slice.call(node.childNodes).forEach(function(cnode){
+            var nnode = formatHTML(cnode);
+            if( //drop repeated BRs- blank lines not allowed
+                parent.lastChild === null ||
+                parent.lastChild.nodeName !== 'BR' ||
+                nnode.nodeName !== 'BR'
+            ){ parent.appendChild(nnode); }
+        });
+        return frag;
+    }
 
-	function HTML2VTTr(node){
-		var tag, innertxt,
-			classtext = "";
-		if(node.nodeType === Node.TEXT_NODE){
-			return node.nodeValue.replace(/[\r\n]+/g,' ');
-		}
+    function HTML2VTT(node){
+        return [].map.call(node.childNodes, HTML2VTTr)
+            .join('') //replace ensures no blank lines are exported
+            .replace(/(\r\n){2,}/g,'\r\n');
+    }
 
-		innertxt = [].map.call(node.childNodes, HTML2VTTr).join('');
-		if(node.className.length > 0){
-			classtext = "." + node.className.trim().replace(/\s+/g,'.')
-		}
+    function HTML2VTTr(node){
+        var tag, innertxt,
+            classtext = "";
+        if(node.nodeType === Node.TEXT_NODE){
+            return node.nodeValue.replace(/[\r\n]+/g,' ');
+        }
 
-		if(node.nodeType === Node.ELEMENT_NODE){
-			tag = node.nodeName;
-			switch(tag){
-			case "BR": return "\r\n";
-			case "DIV": return "\r\n"+innertxt;
-			case "I":
-				return (node["data-target"] === "timestamp")
-						?node["data-timestamp"]
-						:("<i"+classtext+">"+innertxt+"</i>");
-			case "U": case "B": case "RUBY": case "RT":
-				tag = tag.toLowerCase();
-				return "<"+tag+classtext+">"+innertxt+"</"+tag+">";
-			case "SPAN":
-				switch(node['data-cuetag']){
-				case "V": return "<v"+classtext+" "+node['data-voice']+">"+innertxt+"</v>";
-				case "C": return "<c"+classtext+">"+innertxt+"</c>";
-				case "LANG": return "<lang"+classtext+" "+node.lang+">"+innertxt+"</lang>";
-				}
-			}
-		}
+        innertxt = [].map.call(node.childNodes, HTML2VTTr).join('');
+        if(node.className.length > 0){
+            classtext = "." + node.className.trim().replace(/\s+/g,'.')
+        }
 
-		//ignore unrecognized tags & node types
-		return innertxt;
-	}
+        if(node.nodeType === Node.ELEMENT_NODE){
+            tag = node.nodeName;
+            switch(tag){
+            case "BR": return "\r\n";
+            case "DIV": return "\r\n"+innertxt;
+            case "I":
+                return (node["data-target"] === "timestamp")
+                        ?node["data-timestamp"]
+                        :("<i"+classtext+">"+innertxt+"</i>");
+            case "U": case "B": case "RUBY": case "RT":
+                tag = tag.toLowerCase();
+                return "<"+tag+classtext+">"+innertxt+"</"+tag+">";
+            case "SPAN":
+                switch(node['data-cuetag']){
+                case "V": return "<v"+classtext+" "+node['data-voice']+">"+innertxt+"</v>";
+                case "C": return "<c"+classtext+">"+innertxt+"</c>";
+                case "LANG": return "<lang"+classtext+" "+node.lang+">"+innertxt+"</lang>";
+                }
+            }
+        }
 
-	//var WebVTTDEFAULTSCueParser		= /^DEFAULTS?\s+\-\-\>\s+(.*)/g;
-	//var WebVTTSTYLECueParser		= /^STYLES?\s+\-\-\>\s*\n([\s\S]*)/g;
-	//var WebVTTCOMMENTCueParser		= /^COMMENTS?\s+\-\-\>\s+(.*)/g;
+        //ignore unrecognized tags & node types
+        return innertxt;
+    }
 
-	var set_pat = /(align|vertical|line|size|position):(\S+)/g,
-		ar_set_pat = /([DLTAS]):(\S+)/g,
-		ar_set_map = {"D":"direction","L":"line","T":"position","A":"align","S":"size"},
-		direction_map = {'horizontal':'','vertical-lr':'lr','vertical':'rl'},
-		time_pat = /^\s*(\d*:?[0-5]\d:[0-5]\d\.\d{3})\s*-->\s*(\d*:?[0-5]\d:[0-5]\d\.\d{3})\s*(.*)/;
+    //var WebVTTDEFAULTSCueParser        = /^DEFAULTS?\s+\-\-\>\s+(.*)/g;
+    //var WebVTTSTYLECueParser        = /^STYLES?\s+\-\-\>\s*\n([\s\S]*)/g;
+    //var WebVTTCOMMENTCueParser        = /^COMMENTS?\s+\-\-\>\s+(.*)/g;
 
-	function VTTtime(time){
-		var seconds = Math.floor(time),
-			minutes = Math.floor(seconds/60),
-			hh,mm,ss,ms,text;
-		hh = Math.floor(minutes/60);
-		mm = (minutes%60);
-		ss = (seconds%60);
-		ms = Math.floor(1000*(time-seconds));
-		text = (hh>0?(hh>9?hh:"0"+hh)+":":"");
-		return text+(mm>9?mm:"0"+mm)+":"+(ss>9?ss:"0"+ss)+"."+(ms>99?ms:(ms>9?"0"+ms:"00"+ms));
-	}
+    var set_pat = /(align|vertical|line|size|position):(\S+)/g,
+        ar_set_pat = /([DLTAS]):(\S+)/g,
+        ar_set_map = {"D":"direction","L":"line","T":"position","A":"align","S":"size"},
+        direction_map = {'horizontal':'','vertical-lr':'lr','vertical':'rl'},
+        time_pat = /^\s*(\d*:?[0-5]\d:[0-5]\d\.\d{3})\s*-->\s*(\d*:?[0-5]\d:[0-5]\d\.\d{3})\s*(.*)/;
 
-	function serializeCue(cue){
-		var text = (cue.id?cue.id+"\r\n":"")
-			+VTTtime(cue.startTime)+" --> "+VTTtime(cue.endTime);
-		if(cue.vertical !== ''){ text+=" vertical:"+cue.vertical; }
-		if(cue.align !== 'middle'){ text+=" align:"+cue.align; }
-		if(cue.line !== 'auto'){ text+=" line:"+cue.line; }
-		if(cue.size !== 100){ text+=" line:"+cue.size+"%"; }
-		if(cue.position !== 50){ text+=" position:"+cue.position+"%"; }
-		return text+"\r\n"+cue.text.replace(/(\r?\n)+$/g,"")+"\r\n\r\n";
-	}
+    function VTTtime(time){
+        var seconds = Math.floor(time),
+            minutes = Math.floor(seconds/60),
+            hh,mm,ss,ms,text;
+        hh = Math.floor(minutes/60);
+        mm = (minutes%60);
+        ss = (seconds%60);
+        ms = Math.floor(1000*(time-seconds));
+        text = (hh>0?(hh>9?hh:"0"+hh)+":":"");
+        return text+(mm>9?mm:"0"+mm)+":"+(ss>9?ss:"0"+ss)+"."+(ms>99?ms:(ms>9?"0"+ms:"00"+ms));
+    }
 
-	function serialize(track){
-		return "WEBVTT\r\n\r\n"+[].map.call(track.cues,function(cue){ return serializeCue(cue); }).join('');
-	}
+    function serializeCue(cue){
+        var text = (cue.id?cue.id+"\r\n":"")
+            +VTTtime(cue.startTime)+" --> "+VTTtime(cue.endTime);
+        if(cue.vertical !== ''){ text+=" vertical:"+cue.vertical; }
+        if(cue.align !== 'middle'){ text+=" align:"+cue.align; }
+        if(cue.line !== 'auto'){ text+=" line:"+cue.line; }
+        if(cue.size !== 100){ text+=" line:"+cue.size+"%"; }
+        if(cue.position !== 50){ text+=" position:"+cue.position+"%"; }
+        return text+"\r\n"+cue.text.replace(/(\r?\n)+$/g,"")+"\r\n\r\n";
+    }
 
-	function parse_timestamp(input){
-		var ret,p,fields;
-		if(input[0]===':'){throw new SyntaxError("Unexpected Colon");}
-		fields = input.split(/[:.]/);
-		if(fields.length===4){
-			ret = parseInt(fields[0],10)*3600+parseInt(fields[3],10)/1000;
-			p = 1;
-		}else{
-			ret = parseInt(fields[2],10)/1000;
-			p = 0;
-		}
-		return ret + parseInt(fields[p],10)*60 + parseInt(fields[++p],10);
-	}
+    function serialize(track){
+        return "WEBVTT\r\n\r\n"+[].map.call(track.cues,function(cue){ return serializeCue(cue); }).join('');
+    }
 
-	function parse_settings(cue,line){
-		var fields, setting;
-		set_pat.lastIndex = 0;
-		while(!!(fields = set_pat.exec(line))){
-			cue[fields[1]] = fields[2];
-		}
-		//archaic settings;
-		ar_set_pat.lastIndex = 0;
-		while(!!(fields = ar_set_pat.exec(line))){
-			setting = ar_set_map[fields[1]];
-			if(setting === 'direction'){
-				cue.vertical = direction_map[fields[2]];
-			}else{
-				cue[setting] = fields[2];
-			}
-		}
-	}
+    function parse_timestamp(input){
+        var ret,p,fields;
+        if(input[0]===':'){throw new SyntaxError("Unexpected Colon");}
+        fields = input.split(/[:.]/);
+        if(fields.length===4){
+            ret = parseInt(fields[0],10)*3600+parseInt(fields[3],10)/1000;
+            p = 1;
+        }else{
+            ret = parseInt(fields[2],10)/1000;
+            p = 0;
+        }
+        return ret + parseInt(fields[p],10)*60 + parseInt(fields[++p],10);
+    }
 
-	function add_cue(p,input,id,fields,cue_list){
-		var s, l, e, len=input.length, cue;
-		get_text: {
-			if(	(input[p] === '\r') && //Skip CR
-				(++p >= len)	){break get_text;}
-			if(	(input[p] === '\n')	&& //Skip LF
-				(++p >= len)	){break get_text;}
-			s = p;
-			do{	//Cue text loop:
-				l = p; //Collect a sequence of characters that are not CR or LF characters.
-				while(p < len && input[p] !== '\r' && input[p] !== '\n'){p++;}
-				e = p;
-				if(l===p){break;} //terminate on an empty line
-				if(	(input[p] === '\r') && //Skip CR
-					(++p >= len)	){break;}
-				if(input[p] === '\n'){ ++p; } //Skip LF
-			}while(p < len);
-		}
-		//Cue text processing:
-		//This where the spec says we ought to construct the cue-text DOM;
-		//we actually implement that in the WebVTTCue getCueAsHTML method.
-		cue = new WebVTTCue(
-					parse_timestamp(fields[1]), //startTime
-					parse_timestamp(fields[2]), //endTime
-					//Replace all U+0000 NULL characters in input by U+FFFD REPLACEMENT CHARACTERs.
-					input.substring(s,p).replace('\0','\uFFFD').replace(/(\r?\n)+$/g,"")
-				);
-		cue.id = id;
-		parse_settings(cue,fields[3]);
-		cue_list.push(cue);
-		return p;
-	}
+    function parse_settings(cue,line){
+        var fields, setting;
+        set_pat.lastIndex = 0;
+        while(!!(fields = set_pat.exec(line))){
+            cue[fields[1]] = fields[2];
+        }
+        //archaic settings;
+        ar_set_pat.lastIndex = 0;
+        while(!!(fields = ar_set_pat.exec(line))){
+            setting = ar_set_map[fields[1]];
+            if(setting === 'direction'){
+                cue.vertical = direction_map[fields[2]];
+            }else{
+                cue[setting] = fields[2];
+            }
+        }
+    }
 
-	function parse_cues(input,p){
-		var line,l,id,fields,
-			cue_list = [],
-			len = input.length;
+    function add_cue(p,input,id,fields,cue_list){
+        var s, l, e, len=input.length, cue;
+        get_text: {
+            if(    (input[p] === '\r') && //Skip CR
+                (++p >= len)    ){break get_text;}
+            if(    (input[p] === '\n')    && //Skip LF
+                (++p >= len)    ){break get_text;}
+            s = p;
+            do{    //Cue text loop:
+                l = p; //Collect a sequence of characters that are not CR or LF characters.
+                while(p < len && input[p] !== '\r' && input[p] !== '\n'){p++;}
+                e = p;
+                if(l===p){break;} //terminate on an empty line
+                if(    (input[p] === '\r') && //Skip CR
+                    (++p >= len)    ){break;}
+                if(input[p] === '\n'){ ++p; } //Skip LF
+            }while(p < len);
+        }
+        //Cue text processing:
+        //This where the spec says we ought to construct the cue-text DOM;
+        //we actually implement that in the WebVTTCue getCueAsHTML method.
+        cue = new WebVTTCue(
+                    parse_timestamp(fields[1]), //startTime
+                    parse_timestamp(fields[2]), //endTime
+                    //Replace all U+0000 NULL characters in input by U+FFFD REPLACEMENT CHARACTERs.
+                    input.substring(s,p).replace('\0','\uFFFD').replace(/(\r?\n)+$/g,"")
+                );
+        cue.id = id;
+        parse_settings(cue,fields[3]);
+        cue_list.push(cue);
+        return p;
+    }
 
-		function crlf(){
-			if(	(input[p] === '\r') && //Skip CR
-				(++p >= len)	){throw 0;}
-			if(	(input[p] === '\n')	&& //Skip LF
-				(++p >= len)	){throw 0;}
-		}
+    function parse_cues(input,p){
+        var line,l,id,fields,
+            cue_list = [],
+            len = input.length;
 
-		function collect_line(){
-			l=p; //Collect a sequence of characters that are not CR or LF characters.
-			while(input[p]!=='\r' && input[p] !=='\n'){
-				if(++p >= len){throw 0;}
-			}
-		}
+        function crlf(){
+            if(    (input[p] === '\r') && //Skip CR
+                (++p >= len)    ){throw 0;}
+            if(    (input[p] === '\n')    && //Skip LF
+                (++p >= len)    ){throw 0;}
+        }
 
-		try {
-			cue_loop: do{
-				//Skip CR & LF characters.
-				while(input[p]==='\r' || input[p]==='\n'){
-					if(++p >= len){break cue_loop;}
-				}
-				collect_line();
-				line = input.substring(l,p);
-				//If line does not contain "-->", treat it as an id & get a new line
-				if(line.indexOf('-->')===-1){
-					crlf();
-					collect_line();
-					if(l===p){continue cue_loop;} //If line is the empty string, start over.
-					id = line; //Let cue's text track cue identifier be the previous line.
-					line = input.substring(l,p);
-				}else{id = '';}
+        function collect_line(){
+            l=p; //Collect a sequence of characters that are not CR or LF characters.
+            while(input[p]!=='\r' && input[p] !=='\n'){
+                if(++p >= len){throw 0;}
+            }
+        }
 
-				//Collect WebVTT cue timings and settings from line
-				if(fields = time_pat.exec(line)){
-					p = add_cue(p,input,id,fields,cue_list);
-				}else{ //Bad cue loop:
-					do{	crlf();
-						collect_line();
-					}while(l!==p); //Look for a blank line to terminate
-				}
-			}while(p < len);
-		}finally{//End: The file has ended. The WebVTT parser has finished.
-			return cue_list;
-		}
-	}
+        try {
+            cue_loop: do{
+                //Skip CR & LF characters.
+                while(input[p]==='\r' || input[p]==='\n'){
+                    if(++p >= len){break cue_loop;}
+                }
+                collect_line();
+                line = input.substring(l,p);
+                //If line does not contain "-->", treat it as an id & get a new line
+                if(line.indexOf('-->')===-1){
+                    crlf();
+                    collect_line();
+                    if(l===p){continue cue_loop;} //If line is the empty string, start over.
+                    id = line; //Let cue's text track cue identifier be the previous line.
+                    line = input.substring(l,p);
+                }else{id = '';}
 
-	function parse(input){
-		var line, l, p, cueList,
-			len = input.length;
+                //Collect WebVTT cue timings and settings from line
+                if(fields = time_pat.exec(line)){
+                    p = add_cue(p,input,id,fields,cue_list);
+                }else{ //Bad cue loop:
+                    do{    crlf();
+                        collect_line();
+                    }while(l!==p); //Look for a blank line to terminate
+                }
+            }while(p < len);
+        }finally{//End: The file has ended. The WebVTT parser has finished.
+            return cue_list;
+        }
+    }
 
-		//If the first character is a BYTE ORDER MARK, skip it.
-		l = p = +(input[0] === '\uFEFF');
-		//Collect a sequence of chars that are not CR or LF.
-		while(p < len && input[p] !== '\r' && input[p] !== '\n'){p++;}
-		//If line is less than 6 chars long, this is not a WebVTT file.
-		if(p-l<6){throw new Error("Not WebVTT Data");}
-		line = input.substring(l,p);
-		//If the first 6 chars !== "WEBVTT", or line > 6 chars long
-		//and the 7th char is neither U+0020 SPACE nor U+0009 TABULATION, this is not a WebVTT file.
-		if(!/^WEBVTT([\u0020\u0009].*|$)/.test(line)){throw new Error("Not WebVTT Data");}
+    function parse(input){
+        var line, l, p, cueList,
+            len = input.length;
 
-		//If position is past the end of input, end.
-		if(p < len) parseCues: {
-			do{	//Header:
-				if(	(input[p] === '\r') && //Skip CR
-					(++p >= len)	){break parseCues;}
-				if(	(input[p] === '\n')	&& //Skip LF
-					(++p >= len)	){break parseCues;}
-				l=p; //Collect a sequence of characters that are not CR or LF characters.
-				while(input[p] !== '\r' && input[p] !== '\n'){
-					if(++p >= len){break parseCues;}
-				}
-			}while(l!==p);	//Look for an empty line to finish the header
-			cueList = parse_cues(input,p);
-		}
-		return {
-			cueList: cueList || [],
-			kind: 'subtitles',
-			lang: '',
-			label: ''
-		};
-	}
+        //If the first character is a BYTE ORDER MARK, skip it.
+        l = p = +(input[0] === '\uFEFF');
+        //Collect a sequence of chars that are not CR or LF.
+        while(p < len && input[p] !== '\r' && input[p] !== '\n'){p++;}
+        //If line is less than 6 chars long, this is not a WebVTT file.
+        if(p-l<6){throw new Error("Not WebVTT Data");}
+        line = input.substring(l,p);
+        //If the first 6 chars !== "WEBVTT", or line > 6 chars long
+        //and the 7th char is neither U+0020 SPACE nor U+0009 TABULATION, this is not a WebVTT file.
+        if(!/^WEBVTT([\u0020\u0009].*|$)/.test(line)){throw new Error("Not WebVTT Data");}
 
-	var positionCue = (function(){
+        //If position is past the end of input, end.
+        if(p < len) parseCues: {
+            do{    //Header:
+                if(    (input[p] === '\r') && //Skip CR
+                    (++p >= len)    ){break parseCues;}
+                if(    (input[p] === '\n')    && //Skip LF
+                    (++p >= len)    ){break parseCues;}
+                l=p; //Collect a sequence of characters that are not CR or LF characters.
+                while(input[p] !== '\r' && input[p] !== '\n'){
+                    if(++p >= len){break parseCues;}
+                }
+            }while(l!==p);    //Look for an empty line to finish the header
+            cueList = parse_cues(input,p);
+        }
+        return {
+            cueList: cueList || [],
+            kind: 'subtitles',
+            lang: '',
+            label: ''
+        };
+    }
 
-		/* applyStyles(DOMNode, Style Object)
-			A fast way to apply multiple CSS styles to a DOMNode
-			First parameter: DOMNode to style
-			Second parameter: An object where the keys are camel-cased CSS property names
-		*/
-		function applyStyles(Node, styleObject){
-			var style = Node.style;
-			Object.keys(styleObject).forEach(function(styleName){
-				style[styleName] = styleObject[styleName];
-			});
-		}
+    var positionCue = (function(){
 
-		// Function to facilitate vertical text alignments in browsers which do not support writing-mode
-		// (sadly, all the good ones!)
-		function spanify(DOMNode,fontSize,lineHeight,chars){
-			var characterCount = 0,
-				templateNode = document.createElement('span');
-			templateNode.dataset['cue-char'] = true;
-			applyStyles(templateNode,{
-				position: "absolute",
-				display: "block",
-				lineHeight: "auto",
-				textAlign: "center",
-				height:	fontSize + "px",
-				width:	lineHeight + "px"
-			});
-			[].forEach.call(DOMNode.childNodes,function(currentNode,nodeIndex){
-				var replacementNode;
-				if(currentNode.nodeType === 3){
-					replacementNode = document.createElement("span");
-					currentNode.nodeValue
-							.split(/(.)/)
-							.forEach(function(s){
-								if(!s.length){ return; }
-								var ch = templateNode.cloneNode(false);
-								ch.textContent = s;
-								replacementNode.appendChild(ch);
-								chars.push(ch)
-							});
-					currentNode.parentNode.replaceChild(replacementNode,currentNode);
-				}else if(DOMNode.childNodes[nodeIndex].nodeType === 1){
-					spanify(DOMNode.childNodes[nodeIndex],fontSize,lineHeight,chars);
-				}
-			});
-			return chars;
-		}
+        /* applyStyles(DOMNode, Style Object)
+            A fast way to apply multiple CSS styles to a DOMNode
+            First parameter: DOMNode to style
+            Second parameter: An object where the keys are camel-cased CSS property names
+        */
+        function applyStyles(Node, styleObject){
+            var style = Node.style;
+            Object.keys(styleObject).forEach(function(styleName){
+                style[styleName] = styleObject[styleName];
+            });
+        }
 
-		function getspanchars(DOMNode,fontSize,lineHeight){
-			var charElements = DOMNode.querySelectorAll('span[cue-char]');
-			return charElements.length?[].slice.apply(charElements):spanify(DOMNode,fontSize,lineHeight,[]);
-		}
+        // Function to facilitate vertical text alignments in browsers which do not support writing-mode
+        // (sadly, all the good ones!)
+        function spanify(DOMNode,fontSize,lineHeight,chars){
+            var characterCount = 0,
+                templateNode = document.createElement('span');
+            templateNode.dataset['cue-char'] = true;
+            applyStyles(templateNode,{
+                position: "absolute",
+                display: "block",
+                lineHeight: "auto",
+                textAlign: "center",
+                height:    fontSize + "px",
+                width:    lineHeight + "px"
+            });
+            [].forEach.call(DOMNode.childNodes,function(currentNode,nodeIndex){
+                var replacementNode;
+                if(currentNode.nodeType === 3){
+                    replacementNode = document.createElement("span");
+                    currentNode.nodeValue
+                            .split(/(.)/)
+                            .forEach(function(s){
+                                if(!s.length){ return; }
+                                var ch = templateNode.cloneNode(false);
+                                ch.textContent = s;
+                                replacementNode.appendChild(ch);
+                                chars.push(ch)
+                            });
+                    currentNode.parentNode.replaceChild(replacementNode,currentNode);
+                }else if(DOMNode.childNodes[nodeIndex].nodeType === 1){
+                    spanify(DOMNode.childNodes[nodeIndex],fontSize,lineHeight,chars);
+                }
+            });
+            return chars;
+        }
 
-		return function(rendered, availableCueArea, videoMetrics){
-			// Variables for maintaining render calculations
-			var DOMNode = rendered.node,
-				cueObject = rendered.cue,
-				cueX = 0, cueY = 0, cueWidth = 0, cueHeight = 0, cuePaddingLR = 0, cuePaddingTB = 0,
-				cueSize, cueLine, cueVertical = cueObject.vertical, cueSnap = cueObject.snapToLines, cuePosition = cueObject.position,
-				baseFontSize, basePixelFontSize,
-				pixelLineHeight, verticalPixelLineHeight,
-				px2pt = TimedText.unitRatio("px","pt");
+        function getspanchars(DOMNode,fontSize,lineHeight){
+            var charElements = DOMNode.querySelectorAll('span[cue-char]');
+            return charElements.length?[].slice.apply(charElements):spanify(DOMNode,fontSize,lineHeight,[]);
+        }
 
-			// Calculate font metrics
-			baseFontSize = Math.max(videoMetrics.height * 0.05 * px2pt, 10);
-			basePixelFontSize = Math.floor(baseFontSize/px2pt);
-			pixelLineHeight = Math.ceil(baseFontSize * 1.3/px2pt);
-			verticalPixelLineHeight	= pixelLineHeight;
+        return function(rendered, availableCueArea, videoMetrics){
+            // Variables for maintaining render calculations
+            var DOMNode = rendered.node,
+                cueObject = rendered.cue,
+                cueX = 0, cueY = 0, cueWidth = 0, cueHeight = 0, cuePaddingLR = 0, cuePaddingTB = 0,
+                cueSize, cueLine, cueVertical = cueObject.vertical, cueSnap = cueObject.snapToLines, cuePosition = cueObject.position,
+                baseFontSize, basePixelFontSize,
+                pixelLineHeight, verticalPixelLineHeight,
+                px2pt = TimedText.unitRatio("px","pt");
 
-			if(pixelLineHeight * Math.floor(videoMetrics.height / pixelLineHeight) < videoMetrics.height){
-				pixelLineHeight = Math.floor(videoMetrics.height / Math.floor(videoMetrics.height / pixelLineHeight));
-			}
+            // Calculate font metrics
+            baseFontSize = Math.max(videoMetrics.height * 0.05 * px2pt, 10);
+            basePixelFontSize = Math.floor(baseFontSize/px2pt);
+            pixelLineHeight = Math.ceil(baseFontSize * 1.3/px2pt);
+            verticalPixelLineHeight    = pixelLineHeight;
 
-			if(pixelLineHeight * Math.floor(videoMetrics.width / pixelLineHeight) < videoMetrics.width){
-				verticalPixelLineHeight = Math.ceil(videoMetrics.width / Math.floor(videoMetrics.width / pixelLineHeight));
-			}
+            if(pixelLineHeight * Math.floor(videoMetrics.height / pixelLineHeight) < videoMetrics.height){
+                pixelLineHeight = Math.floor(videoMetrics.height / Math.floor(videoMetrics.height / pixelLineHeight));
+            }
 
-			if(cueVertical === ""){
-				DOMNode.style.display = "inline-block";
-				cuePaddingLR = Math.floor(videoMetrics.width/100);
-			}else{
-				cuePaddingTB = Math.floor(videoMetrics.height/100);
-			}
+            if(pixelLineHeight * Math.floor(videoMetrics.width / pixelLineHeight) < videoMetrics.width){
+                verticalPixelLineHeight = Math.ceil(videoMetrics.width / Math.floor(videoMetrics.width / pixelLineHeight));
+            }
 
-			//http://dev.w3.org/html5/webvtt/#applying-css-properties-to-webvtt-node-objects
-			//not quite perfect compliance, but close, especially given vertical-text hacks
-			applyStyles(DOMNode,{
-				position: "absolute",
-				unicodeBidi: "plaintext",
-				overflow: "hidden",
-				height: pixelLineHeight + "px", //so the scrollheight has a baseline to work from
-				padding: cuePaddingTB + "px " + cuePaddingLR + "px",
-				textAlign: (cueVertical !== "")?"":(cueObject.align === "middle"?"center":cueObject.align),
-				direction: TimedText.getTextDirection(DOMNode.textContent),
-				fontSize: baseFontSize + "pt",
-				lineHeight: "1.3",
-				boxSizing: "border-box"
-			});
+            if(cueVertical === ""){
+                DOMNode.style.display = "inline-block";
+                cuePaddingLR = Math.floor(videoMetrics.width/100);
+            }else{
+                cuePaddingTB = Math.floor(videoMetrics.height/100);
+            }
 
-			cueSize = cueObject.size;
-			if(cueVertical === ""){
-				cueWidth = (cueLine === 'auto'?availableCueArea:videoMetrics).width * cueSize/100;
-				cueX = ((availableCueArea.right - cueWidth) * (cuePosition/100)) + availableCueArea.left;
-				DOMNode.style.width = cueWidth + "px";
-				DOMNode.style.left = cueX + "px";
+            //http://dev.w3.org/html5/webvtt/#applying-css-properties-to-webvtt-node-objects
+            //not quite perfect compliance, but close, especially given vertical-text hacks
+            applyStyles(DOMNode,{
+                position: "absolute",
+                unicodeBidi: "plaintext",
+                overflow: "hidden",
+                height: pixelLineHeight + "px", //so the scrollheight has a baseline to work from
+                padding: cuePaddingTB + "px " + cuePaddingLR + "px",
+                textAlign: (cueVertical !== "")?"":(cueObject.align === "middle"?"center":cueObject.align),
+                direction: TimedText.getTextDirection(DOMNode.textContent),
+                fontSize: baseFontSize + "pt",
+                lineHeight: "1.3",
+                boxSizing: "border-box"
+            });
 
-				if(cueSnap){
-					cueHeight = Math.round(DOMNode.scrollHeight/pixelLineHeight)*pixelLineHeight;
-					if(cueObject.line === 'auto'){
-						cueY = availableCueArea.height + availableCueArea.top - cueHeight;
-					}else{
-						cueLine = parseFloat(cueObject.line);
-						cueY = cueLine < 0
-								?videoMetrics.height-cueHeight+(1+cueLine)*pixelLineHeight
-								:cueLine*pixelLineHeight;
-					}
-				}else{
-					cueHeight = DOMNode.scrollHeight;
-					cueLine = parseFloat(cueObject.line);
-					cueY = (videoMetrics.height - cueHeight - 2*cuePaddingTB) * (cueLine/100);
-				}
-				DOMNode.style.height = cueHeight + "px";
-				DOMNode.style.top = cueY + "px";
+            cueSize = cueObject.size;
+            if(cueVertical === ""){
+                cueWidth = (cueLine === 'auto'?availableCueArea:videoMetrics).width * cueSize/100;
+                cueX = ((availableCueArea.right - cueWidth) * (cuePosition/100)) + availableCueArea.left;
+                DOMNode.style.width = cueWidth + "px";
+                DOMNode.style.left = cueX + "px";
 
-				// Work out how to shrink the available render area
-				// If subtracting from the bottom works out to a larger area, subtract from the bottom.
-				// Otherwise, subtract from the top.
-				if((cueY - 2*availableCueArea.top) >=
-					(availableCueArea.bottom - (cueY + cueHeight)) &&
-					availableCueArea.bottom > cueY){
-					availableCueArea.bottom = cueY;
-				}else if(availableCueArea.top < cueY + cueHeight){
-					availableCueArea.top = cueY + cueHeight;
-				}
-				availableCueArea.height = availableCueArea.bottom - availableCueArea.top;
+                if(cueSnap){
+                    cueHeight = Math.round(DOMNode.scrollHeight/pixelLineHeight)*pixelLineHeight;
+                    if(cueObject.line === 'auto'){
+                        cueY = availableCueArea.height + availableCueArea.top - cueHeight;
+                    }else{
+                        cueLine = parseFloat(cueObject.line);
+                        cueY = cueLine < 0
+                                ?videoMetrics.height-cueHeight+(1+cueLine)*pixelLineHeight
+                                :cueLine*pixelLineHeight;
+                    }
+                }else{
+                    cueHeight = DOMNode.scrollHeight;
+                    cueLine = parseFloat(cueObject.line);
+                    cueY = (videoMetrics.height - cueHeight - 2*cuePaddingTB) * (cueLine/100);
+                }
+                DOMNode.style.height = cueHeight + "px";
+                DOMNode.style.top = cueY + "px";
 
-			}else{
-				cueHeight = availableCueArea.height * (cueSize/100);
-				// Work out CueY taking into account textPosition...
-				cueY = ((availableCueArea.bottom - cueHeight) * (cuePosition/100)) +
-						availableCueArea.top;
+                // Work out how to shrink the available render area
+                // If subtracting from the bottom works out to a larger area, subtract from the bottom.
+                // Otherwise, subtract from the top.
+                if((cueY - 2*availableCueArea.top) >=
+                    (availableCueArea.bottom - (cueY + cueHeight)) &&
+                    availableCueArea.bottom > cueY){
+                    availableCueArea.bottom = cueY;
+                }else if(availableCueArea.top < cueY + cueHeight){
+                    availableCueArea.top = cueY + cueHeight;
+                }
+                availableCueArea.height = availableCueArea.bottom - availableCueArea.top;
 
-				(function(){	// Split into characters, and continue calculating width & positioning with new info
-					var currentLine = 0, characterPosition = 0,
-						characters = getspanchars(DOMNode,basePixelFontSize,verticalPixelLineHeight),
-						characterCount = characters.length,
-						charactersPerLine = Math.floor((cueHeight-cuePaddingTB*2)/basePixelFontSize),
-						lineCount = Math.ceil(characterCount/charactersPerLine),
-						finalLineCharacterCount = characterCount - (charactersPerLine * (lineCount - 1)),
-						finalLineCharacterHeight = finalLineCharacterCount * basePixelFontSize;
+            }else{
+                cueHeight = availableCueArea.height * (cueSize/100);
+                // Work out CueY taking into account textPosition...
+                cueY = ((availableCueArea.bottom - cueHeight) * (cuePosition/100)) +
+                        availableCueArea.top;
 
-					cueWidth = Math.ceil(characterCount/charactersPerLine) * verticalPixelLineHeight;
+                (function(){    // Split into characters, and continue calculating width & positioning with new info
+                    var currentLine = 0, characterPosition = 0,
+                        characters = getspanchars(DOMNode,basePixelFontSize,verticalPixelLineHeight),
+                        characterCount = characters.length,
+                        charactersPerLine = Math.floor((cueHeight-cuePaddingTB*2)/basePixelFontSize),
+                        lineCount = Math.ceil(characterCount/charactersPerLine),
+                        finalLineCharacterCount = characterCount - (charactersPerLine * (lineCount - 1)),
+                        finalLineCharacterHeight = finalLineCharacterCount * basePixelFontSize;
 
-					// Work out CueX taking into account linePosition...
-					if(cueSnap){
-						if(cueObject.line === 'auto'){
-							cueX = (cueVertical === "lr" ? availableCueArea.left : availableCueArea.right - cueWidth);
-						}else{
-							cueLine = parseFloat(cueObject.line);
-							cueX = cueVertical === (cueLine < 0 ? "lr" : "rl")
-									? videoMetrics.width-cueWidth+(1+cueLine)*verticalPixelLineHeight : cueLine*vertcialPixelLineHeight;
-						}
-					}else{
-						cueLine = parseFloat(cueObject.line);
-						cueX = ((videoMetrics.width - (cueWidth + (cuePaddingLR * 2))) * (cueVertical === "lr"?cueLine/100:1-cueLine/100));
-					}
+                    cueWidth = Math.ceil(characterCount/charactersPerLine) * verticalPixelLineHeight;
 
-					// Iterate through the characters and position them accordingly...
-					characters.forEach(function(characterSpan){
-						var characterY,
-							characterX = (cueVertical === "lr")
-								?verticalPixelLineHeight * currentLine:cueWidth - (verticalPixelLineHeight * (currentLine+1));
+                    // Work out CueX taking into account linePosition...
+                    if(cueSnap){
+                        if(cueObject.line === 'auto'){
+                            cueX = (cueVertical === "lr" ? availableCueArea.left : availableCueArea.right - cueWidth);
+                        }else{
+                            cueLine = parseFloat(cueObject.line);
+                            cueX = cueVertical === (cueLine < 0 ? "lr" : "rl")
+                                    ? videoMetrics.width-cueWidth+(1+cueLine)*verticalPixelLineHeight : cueLine*vertcialPixelLineHeight;
+                        }
+                    }else{
+                        cueLine = parseFloat(cueObject.line);
+                        cueX = ((videoMetrics.width - (cueWidth + (cuePaddingLR * 2))) * (cueVertical === "lr"?cueLine/100:1-cueLine/100));
+                    }
 
-						if(currentLine < (lineCount-1)){
-							characterY = (characterPosition * basePixelFontSize) + cuePaddingTB;
-						}else switch(cueObject.align){
-							case "start":
-							case "right": //hack
-								characterY = (characterPosition * basePixelFontSize) + cuePaddingTB;
-								break;
-							case "end":
-							case "left":
-								characterY = ((characterPosition * basePixelFontSize)-basePixelFontSize) + ((cueHeight+(cuePaddingTB*2))-finalLineCharacterHeight);
-								break;
-							case "middle":
-								characterY = (((cueHeight - (cuePaddingTB*2))-finalLineCharacterHeight)/2) + (characterPosition * basePixelFontSize);
-						}
+                    // Iterate through the characters and position them accordingly...
+                    characters.forEach(function(characterSpan){
+                        var characterY,
+                            characterX = (cueVertical === "lr")
+                                ?verticalPixelLineHeight * currentLine:cueWidth - (verticalPixelLineHeight * (currentLine+1));
 
-						characterSpan.style.top = characterY + "px";
-						characterSpan.style.left = characterX + "px";
+                        if(currentLine < (lineCount-1)){
+                            characterY = (characterPosition * basePixelFontSize) + cuePaddingTB;
+                        }else switch(cueObject.align){
+                            case "start":
+                            case "right": //hack
+                                characterY = (characterPosition * basePixelFontSize) + cuePaddingTB;
+                                break;
+                            case "end":
+                            case "left":
+                                characterY = ((characterPosition * basePixelFontSize)-basePixelFontSize) + ((cueHeight+(cuePaddingTB*2))-finalLineCharacterHeight);
+                                break;
+                            case "middle":
+                                characterY = (((cueHeight - (cuePaddingTB*2))-finalLineCharacterHeight)/2) + (characterPosition * basePixelFontSize);
+                        }
 
-						if(characterPosition >= charactersPerLine-1){
-							characterPosition = 0;
-							currentLine ++;
-						}else{
-							characterPosition ++;
-						}
-					});
-				}());
+                        characterSpan.style.top = characterY + "px";
+                        characterSpan.style.left = characterX + "px";
 
-				applyStyles(DOMNode,{
-					width: cueWidth + "px",
-					height: cueHeight + "px",
-					left: cueX + "px",
-					top: cueY + "px"
-				});
+                        if(characterPosition >= charactersPerLine-1){
+                            characterPosition = 0;
+                            currentLine ++;
+                        }else{
+                            characterPosition ++;
+                        }
+                    });
+                }());
 
-				// Work out how to shrink the available render area
-				// If subtracting from the right works out to a larger area, subtract from the right.
-				// Otherwise, subtract from the left.
-				if(((cueX - availableCueArea.left) - availableCueArea.left) >=
-					(availableCueArea.right - (cueX + cueWidth))){
-					availableCueArea.right = cueX;
-				}else{
-					availableCueArea.left = cueX + cueWidth;
-				}
-				availableCueArea.width = availableCueArea.right - availableCueArea.left;
-			}
-		};
-	}());
+                applyStyles(DOMNode,{
+                    width: cueWidth + "px",
+                    height: cueHeight + "px",
+                    left: cueX + "px",
+                    top: cueY + "px"
+                });
 
-	var updateCueTime = (function(){
-		function set_node_time(node,pos){
-			var newnode;
-			switch(node.nodeType){
-				case Node.TEXT_NODE:
-					newnode = document.createElement('span');
-					node.parentNode.replaceChild(newnode,node);
-					newnode.appendChild(node);
-					node = newnode;
-				case Node.ELEMENT_NODE:
-					node.dataset['time-position'] = pos;
-			}
-		}
+                // Work out how to shrink the available render area
+                // If subtracting from the right works out to a larger area, subtract from the right.
+                // Otherwise, subtract from the left.
+                if(((cueX - availableCueArea.left) - availableCueArea.left) >=
+                    (availableCueArea.right - (cueX + cueWidth))){
+                    availableCueArea.right = cueX;
+                }else{
+                    availableCueArea.left = cueX + cueWidth;
+                }
+                availableCueArea.width = availableCueArea.right - availableCueArea.left;
+            }
+        };
+    }());
 
-		function markTimes(DOM,currentTime){
-			//depth-first traversal of the cue DOM
-			var i, node, time, children, timeNodes,
-				pastNode = null,
-				futureNode = null;
+    var updateCueTime = (function(){
+        function set_node_time(node,pos){
+            var newnode;
+            switch(node.nodeType){
+                case Node.TEXT_NODE:
+                    newnode = document.createElement('span');
+                    node.parentNode.replaceChild(newnode,node);
+                    newnode.appendChild(node);
+                    node = newnode;
+                case Node.ELEMENT_NODE:
+                    node.dataset['time-position'] = pos;
+            }
+        }
 
-			//find the last timestamp in the past and the first in the future
-			timeNodes = DOM.querySelectorAll("i[data-target=timestamp]");
-			if(timeNodes.length === 0){ return 0; }
-			for(i=0;node=timeNodes[i];i++){
-				time = node.dataset.seconds;
-				if(time < currentTime){ pastNode = node; }
-				else if(time > currentTime){ futureNode = node; break; }
-			}
-			//mark nodes as past or future appropriately
-			children = [].slice.call(DOM.childNodes,0);
-			while(children.length){
-				node = children.pop();
-				if(pastNode && node.compareDocumentPosition(pastNode) === 4){ //pastNode is following
-					set_node_time(node,"past");
-				}else if(futureNode && node.compareDocumentPosition(futureNode) === 2){ //futureNode is preceding
-					set_node_time(node,"future");
-				}else{
-					set_node_time(node,"present");
-				}
-				if(node.childNodes){ children.push.apply(children,node.childNodes); }
-			}
-			return pastNode?pastNode.dataset.seconds:"";
-		}
+        function markTimes(DOM,currentTime){
+            //depth-first traversal of the cue DOM
+            var i, node, time, children, timeNodes,
+                pastNode = null,
+                futureNode = null;
 
-		function timeStyle(node){ //TODO: read stylesheets
-			[].forEach.call(node.querySelectorAll('[data-time-position]'),function(element){
-				switch(node.dataset['time-position']){
-				case "past":
-					element.style.visibility = "hidden";
-				case "present":
-				case "future":
-					element.style.visibility = "";
-				}
-			});
-		}
+            //find the last timestamp in the past and the first in the future
+            timeNodes = DOM.querySelectorAll("i[data-target=timestamp]");
+            if(timeNodes.length === 0){ return 0; }
+            for(i=0;node=timeNodes[i];i++){
+                time = node.dataset.seconds;
+                if(time < currentTime){ pastNode = node; }
+                else if(time > currentTime){ futureNode = node; break; }
+            }
+            //mark nodes as past or future appropriately
+            children = [].slice.call(DOM.childNodes,0);
+            while(children.length){
+                node = children.pop();
+                if(pastNode && node.compareDocumentPosition(pastNode) === 4){ //pastNode is following
+                    set_node_time(node,"past");
+                }else if(futureNode && node.compareDocumentPosition(futureNode) === 2){ //futureNode is preceding
+                    set_node_time(node,"future");
+                }else{
+                    set_node_time(node,"present");
+                }
+                if(node.childNodes){ children.push.apply(children,node.childNodes); }
+            }
+            return pastNode?pastNode.dataset.seconds:"";
+        }
 
-		return function(renderedCue, time){
-			var newTime = markTimes(renderedCue.node,time);
-			if(renderedCue.time === newTime){ return false; }
-			renderedCue.time = newTime;
-			timeStyle(renderedCue.node);
-			return true;
-		};
-	}());
+        function timeStyle(node){ //TODO: read stylesheets
+            [].forEach.call(node.querySelectorAll('[data-time-position]'),function(element){
+                switch(node.dataset['time-position']){
+                case "past":
+                    element.style.visibility = "hidden";
+                case "present":
+                case "future":
+                    element.style.visibility = "";
+                }
+            });
+        }
 
-	function attachEditor(renderedCue, edit){
-		switch(renderedCue.kind){
-		case 'chapters':
-		case 'descriptions':
-		case 'metadata':
-		case 'subtitles': break;
-		case 'captions':
-			renderedCue.addFinalizer(function(){ console.log('closed caption'); });
-			break;
-		}
-	}
+        return function(renderedCue, time){
+            var newTime = markTimes(renderedCue.node,time);
+            if(renderedCue.time === newTime){ return false; }
+            renderedCue.time = newTime;
+            timeStyle(renderedCue.node);
+            return true;
+        };
+    }());
 
-	TimedText.registerType('text/vtt',{
-		extension: 'vtt',
-		name: 'WebVTT',
-		cueType: WebVTTCue,
-		isCueCompatible: function(cue){ return cue instanceof WebVTTCue; },
-		formatHTML: formatHTML,
-		textFromHTML: HTML2VTT,
-		positionCue: positionCue,
-		updateCueTime: updateCueTime,
-		updateCueContent: null,
-		attachEditor: attachEditor,
-		parse: parse,
-		serialize: serialize
-	});
+    function attachEditor(renderedCue, edit){
+        switch(renderedCue.kind){
+        case 'chapters':
+        case 'descriptions':
+        case 'metadata':
+        case 'subtitles': break;
+        case 'captions':
+            renderedCue.addFinalizer(function(){ console.log('closed caption'); });
+            break;
+        }
+    }
+
+    TimedText.registerType('text/vtt',{
+        extension: 'vtt',
+        name: 'WebVTT',
+        cueType: WebVTTCue,
+        isCueCompatible: function(cue){ return cue instanceof WebVTTCue; },
+        formatHTML: formatHTML,
+        textFromHTML: HTML2VTT,
+        positionCue: positionCue,
+        updateCueTime: updateCueTime,
+        updateCueContent: null,
+        attachEditor: attachEditor,
+        parse: parse,
+        serialize: serialize
+    });
 }(window.TimedText));
